@@ -5,16 +5,14 @@ import YahooFinance from "yahoo-finance2";
 
 const yahooFinance = new YahooFinance();
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const app = express();
 
-  // API routes FIRST
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
-  });
+// API routes FIRST
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 
-  app.get("/api/stocks", async (req, res) => {
+app.get("/api/stocks", async (req, res) => {
     try {
       const symbols = [
         { id: '2330', symbol: '2330.TW', name: '台積電', strategies: ['growth', 'balanced'] },
@@ -152,24 +150,33 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+// Export the app for Vercel serverless functions
+export default app;
+
+// Only start the Vite dev server / Express listen if NOT on Vercel
+if (!process.env.VERCEL) {
+  async function startServer() {
+    const PORT = 3000;
+
+    // Vite middleware for development
+    if (process.env.NODE_ENV !== "production") {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+    } else {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  startServer();
 }
-
-startServer();
