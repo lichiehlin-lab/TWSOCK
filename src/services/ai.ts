@@ -1,10 +1,22 @@
 import { GoogleGenAI } from "@google/genai";
 import { StockData } from "@/src/data/mockData";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+function getAIClient() {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not set");
+    }
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 export async function generateStockAnalysis(stock: StockData) {
   try {
+    const ai = getAIClient();
     const prompt = `
     你是一位專業的台股量化分析師。請根據以下股票數據，產生一段簡短的分析報告。
     

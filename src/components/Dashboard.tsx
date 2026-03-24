@@ -111,10 +111,10 @@ export function Dashboard() {
                 <div className="space-y-1">
                   <p className="text-sm text-zinc-400">加權指數</p>
                   <p className={`text-2xl font-mono font-bold ${market?.change >= 0 ? 'text-[#ff333a]' : 'text-[#00c853]'}`}>
-                    {market ? market.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '...'}
+                    {market?.price !== undefined && !isNaN(market.price) ? market.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '...'}
                   </p>
                   <p className={`text-xs font-mono ${market?.change >= 0 ? 'text-[#ff333a]' : 'text-[#00c853]'}`}>
-                    {market ? `${market.change >= 0 ? '+' : ''}${market.change.toFixed(2)} (${market.change >= 0 ? '+' : ''}${market.changePercent.toFixed(2)}%)` : '...'}
+                    {market?.change !== undefined && market?.changePercent !== undefined && !isNaN(market.change) ? `${market.change >= 0 ? '+' : ''}${market.change.toFixed(2)} (${market.change >= 0 ? '+' : ''}${market.changePercent.toFixed(2)}%)` : '...'}
                   </p>
                 </div>
                 <div className="space-y-1">
