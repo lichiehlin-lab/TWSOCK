@@ -5,6 +5,49 @@ import YahooFinance from "yahoo-finance2";
 
 const yahooFinance = new YahooFinance();
 
+async function fetchRealTimeTWSE(symbols: string[]) {
+  const querySymbols = symbols.map(s => `tse_${s.split('.')[0]}.tw`).join('|');
+  const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_t00.tw|${querySymbols}&json=1&delay=0`;
+  
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    const realTimeData = new Map();
+    
+    if (data.msgArray) {
+      data.msgArray.forEach((item: any) => {
+        let price = parseFloat(item.z);
+        if (isNaN(price)) price = parseFloat(item.pz);
+        if (isNaN(price)) {
+          const bestBid = item.b ? parseFloat(item.b.split('_')[0]) : NaN;
+          const bestAsk = item.a ? parseFloat(item.a.split('_')[0]) : NaN;
+          if (!isNaN(bestBid) && !isNaN(bestAsk)) price = (bestBid + bestAsk) / 2;
+          else if (!isNaN(bestBid)) price = bestBid;
+          else if (!isNaN(bestAsk)) price = bestAsk;
+        }
+        if (isNaN(price)) price = parseFloat(item.y);
+        
+        const y = parseFloat(item.y);
+        const change = price - y;
+        const changePercent = (change / y) * 100;
+        
+        const key = item.c === 't00' ? '^TWII' : `${item.c}.TW`;
+        realTimeData.set(key, {
+          price,
+          change,
+          changePercent,
+          dayHigh: parseFloat(item.h),
+          dayLow: parseFloat(item.l)
+        });
+      });
+    }
+    return realTimeData;
+  } catch (e) {
+    console.error('TWSE API Error:', e);
+    return new Map();
+  }
+}
+
 const app = express();
 
 // API routes FIRST
@@ -47,28 +90,35 @@ app.get("/api/stocks", async (req, res) => {
         { id: '00713', symbol: '00713.TW', name: '元大台灣高息低波', strategies: ['dividend', 'balanced'] }
       ];
 
+      // Fetch real-time data from TWSE first
+      const realTimeData = await fetchRealTimeTWSE(symbols.map(s => s.symbol));
+
       const [marketQuote, ...results] = await Promise.all([
         yahooFinance.quote('^TWII').catch(() => null),
         ...symbols.map(async (s) => {
         try {
-          // Fetch real-time quote and historical data
-          const quote = await yahooFinance.quote(s.symbol) as any;
+          // Fetch historical data
           const chartData = await yahooFinance.chart(s.symbol, {
             period1: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last 30 days
             interval: '1d'
-          });
+          }).catch(() => null);
 
-          const history = chartData.quotes
+          // Fetch quote for metrics (PE, ROE, etc.)
+          const quote = await yahooFinance.quote(s.symbol).catch(() => ({})) as any;
+
+          const history = chartData?.quotes
             .filter(h => h.close !== null && h.close !== undefined)
             .map(h => ({
               date: h.date.toISOString().split('T')[0],
               price: h.close
-            }));
+            })) || [];
 
-          // Parse metrics (fallback to sensible defaults if missing, e.g., for ETFs)
-          const price = quote.regularMarketPrice || 0;
-          const change = quote.regularMarketChange || 0;
-          const changePercent = quote.regularMarketChangePercent || 0;
+          // Use real-time data if available, otherwise fallback to Yahoo Finance
+          const rt = realTimeData.get(s.symbol);
+          const price = rt?.price || quote.regularMarketPrice || 0;
+          const change = rt?.change || quote.regularMarketChange || 0;
+          const changePercent = rt?.changePercent || quote.regularMarketChangePercent || 0;
+          
           const peRatio = quote.trailingPE || quote.forwardPE || (s.id.startsWith('00') ? 0 : 15);
           const yieldPercent = quote.dividendYield ? quote.dividendYield : (s.id.startsWith('00') ? 6 : 2);
           
@@ -131,9 +181,19 @@ app.get("/api/stocks", async (req, res) => {
         }
       })]);
 
+      const rtMarket = realTimeData.get('^TWII');
+
       res.setHeader('Cache-Control', 'no-store, max-age=0');
       res.json({
-        market: marketQuote ? {
+        market: rtMarket ? {
+          price: rtMarket.price,
+          change: rtMarket.change,
+          changePercent: rtMarket.changePercent,
+          dayHigh: rtMarket.dayHigh,
+          dayLow: rtMarket.dayLow,
+          fiftyTwoWeekHigh: marketQuote?.fiftyTwoWeekHigh || rtMarket.price,
+          fiftyTwoWeekLow: marketQuote?.fiftyTwoWeekLow || rtMarket.price
+        } : (marketQuote ? {
           price: marketQuote.regularMarketPrice,
           change: marketQuote.regularMarketChange,
           changePercent: marketQuote.regularMarketChangePercent,
@@ -141,7 +201,7 @@ app.get("/api/stocks", async (req, res) => {
           dayLow: marketQuote.regularMarketDayLow,
           fiftyTwoWeekHigh: marketQuote.fiftyTwoWeekHigh,
           fiftyTwoWeekLow: marketQuote.fiftyTwoWeekLow
-        } : null,
+        } : null),
         stocks: results.filter(r => r !== null)
       });
     } catch (error) {

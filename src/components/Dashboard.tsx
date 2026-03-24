@@ -6,7 +6,7 @@ import { PreferencesDialog } from "./PreferencesDialog";
 import { PortfolioDialog } from "./PortfolioDialog";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { TrendingUp, Activity, PieChart, Info, Settings2, Loader2 } from "lucide-react";
+import { TrendingUp, Activity, PieChart, Info, Settings2, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "./ui/button";
 
 export function Dashboard() {
@@ -18,19 +18,29 @@ export function Dashboard() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isPrefsOpen, setIsPrefsOpen] = useState(false);
   const [isPortfolioOpen, setIsPortfolioOpen] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchData = async (isManual = false) => {
+    if (isManual) setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/stocks');
+      const data = await res.json();
+      setStocks(data.stocks || []);
+      setMarket(data.market || null);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error("Failed to fetch stocks:", err);
+    } finally {
+      setLoading(false);
+      if (isManual) setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    fetch('/api/stocks')
-      .then(res => res.json())
-      .then(data => {
-        setStocks(data.stocks || []);
-        setMarket(data.market || null);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to fetch stocks:", err);
-        setLoading(false);
-      });
+    fetchData();
+    const interval = setInterval(() => fetchData(), 30000); // Auto refresh every 30 seconds
+    return () => clearInterval(interval);
   }, []);
 
   const top30 = useMemo(() => {
@@ -59,6 +69,15 @@ export function Dashboard() {
             <p className="text-zinc-400 mt-1">台股 Top30 智能選股系統 (即時數據)</p>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              className="border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800"
+              onClick={() => fetchData(true)}
+              disabled={isRefreshing || loading}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              重新整理
+            </Button>
             <Button 
               variant="outline" 
               className="border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800"
@@ -151,7 +170,9 @@ export function Dashboard() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold tracking-tight">Top 30 推薦名單</h2>
-            <span className="text-sm text-zinc-400">更新時間：即時 (Yahoo Finance)</span>
+            <span className="text-sm text-zinc-400">
+              更新時間：{lastUpdated ? lastUpdated.toLocaleTimeString('zh-TW', { hour12: false }) : '即時'} (Yahoo Finance)
+            </span>
           </div>
           
           {loading ? (
