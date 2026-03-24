@@ -10,7 +10,13 @@ async function fetchRealTimeTWSE(symbols: string[]) {
   const url = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_t00.tw|${querySymbols}&json=1&delay=0`;
   
   try {
-    const res = await fetch(url);
+    // Use a 3-second timeout so we don't exhaust Vercel's 10s function limit
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000);
+    
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
     const data = await res.json();
     const realTimeData = new Map();
     
@@ -43,7 +49,7 @@ async function fetchRealTimeTWSE(symbols: string[]) {
     }
     return realTimeData;
   } catch (e) {
-    console.error('TWSE API Error:', e);
+    console.warn('TWSE API unavailable (likely blocked by cloud provider), falling back to Yahoo Finance data.');
     return new Map();
   }
 }
