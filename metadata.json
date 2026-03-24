@@ -1,0 +1,5 @@
+{
+  "name": "AI Smart Stock Selector",
+  "description": "台股 Top10 智能選股系統，支援高股息、成長股與平衡策略，並提供 AI 深度分析與投資組合建議。",
+  "requestFramePermissions": []
+}
