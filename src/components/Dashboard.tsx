@@ -43,11 +43,11 @@ export function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const top30 = useMemo(() => {
+  const top50 = useMemo(() => {
     return [...stocks]
       .filter(s => s.strategies.includes(strategy))
       .sort((a, b) => b.scores.total - a.scores.total)
-      .slice(0, 30);
+      .slice(0, 50);
   }, [stocks, strategy]);
 
   const handleStockClick = (stock: StockData) => {
@@ -66,7 +66,7 @@ export function Dashboard() {
               <Activity className="w-8 h-8 text-blue-500" />
               AI Smart Stock Selector
             </h1>
-            <p className="text-zinc-400 mt-1">台股 Top30 智能選股系統 (即時數據)</p>
+            <p className="text-zinc-400 mt-1">台股 Top50 智能選股系統 (即時數據)</p>
           </div>
           <div className="flex items-center gap-3">
             <Button 
@@ -166,10 +166,10 @@ export function Dashboard() {
           </Card>
         </div>
 
-        {/* Top 30 List */}
+        {/* Top 50 List */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold tracking-tight">Top 30 推薦名單</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Top 50 推薦名單</h2>
             <span className="text-sm text-zinc-400">
               更新時間：{lastUpdated ? lastUpdated.toLocaleTimeString('zh-TW', { hour12: false }) : '即時'} (Yahoo Finance)
             </span>
@@ -182,7 +182,7 @@ export function Dashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {top30.map((stock, index) => (
+              {top50.map((stock, index) => (
                 <div key={stock.id} className="relative">
                   <div className="absolute -top-3 -left-3 w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center font-bold font-mono text-sm z-10 border-2 border-zinc-950 shadow-lg">
                     {index + 1}

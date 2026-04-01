@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import YahooFinance from "yahoo-finance2";
-import { mockStocks } from "./src/data/mockData";
+import { mockStocks } from "./src/data/mockData.ts";
 
 const yahooFinance = new YahooFinance();
 
@@ -93,7 +93,27 @@ app.get("/api/stocks", async (req, res) => {
         { id: '2603', symbol: '2603.TW', name: '長榮', strategies: ['dividend', 'growth'] },
         { id: '0050', symbol: '0050.TW', name: '元大台灣50', strategies: ['balanced', 'growth'] },
         { id: '00929', symbol: '00929.TW', name: '復華台灣科技優息', strategies: ['dividend'] },
-        { id: '00713', symbol: '00713.TW', name: '元大台灣高息低波', strategies: ['dividend', 'balanced'] }
+        { id: '00713', symbol: '00713.TW', name: '元大台灣高息低波', strategies: ['dividend', 'balanced'] },
+        { id: '2886', symbol: '2886.TW', name: '兆豐金', strategies: ['dividend', 'balanced'] },
+        { id: '2885', symbol: '2885.TW', name: '元大金', strategies: ['dividend'] },
+        { id: '2883', symbol: '2883.TW', name: '開發金', strategies: ['dividend'] },
+        { id: '2890', symbol: '2890.TW', name: '永豐金', strategies: ['dividend'] },
+        { id: '2880', symbol: '2880.TW', name: '華南金', strategies: ['dividend'] },
+        { id: '2887', symbol: '2887.TW', name: '台新金', strategies: ['dividend'] },
+        { id: '5880', symbol: '5880.TW', name: '合庫金', strategies: ['dividend'] },
+        { id: '2301', symbol: '2301.TW', name: '光寶科', strategies: ['dividend', 'balanced'] },
+        { id: '2345', symbol: '2345.TW', name: '智邦', strategies: ['growth'] },
+        { id: '3045', symbol: '3045.TW', name: '台灣大', strategies: ['dividend'] },
+        { id: '4904', symbol: '4904.TW', name: '遠傳', strategies: ['dividend'] },
+        { id: '2207', symbol: '2207.TW', name: '和泰車', strategies: ['balanced'] },
+        { id: '2912', symbol: '2912.TW', name: '統一超', strategies: ['balanced'] },
+        { id: '2609', symbol: '2609.TW', name: '陽明', strategies: ['dividend'] },
+        { id: '1101', symbol: '1101.TW', name: '台泥', strategies: ['dividend'] },
+        { id: '1301', symbol: '1301.TW', name: '台塑', strategies: ['dividend'] },
+        { id: '2327', symbol: '2327.TW', name: '國巨', strategies: ['growth'] },
+        { id: '6669', symbol: '6669.TW', name: '緯穎', strategies: ['growth'] },
+        { id: '3661', symbol: '3661.TW', name: '世芯-KY', strategies: ['growth'] },
+        { id: '2383', symbol: '2383.TW', name: '台光電', strategies: ['growth'] }
       ];
 
       // Fetch real-time data from TWSE first
