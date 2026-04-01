@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import YahooFinance from "yahoo-finance2";
-import { mockStocks } from "./src/data/mockData.ts";
+import { mockStocks } from "./src/data/mockData.js";
 
 const yahooFinance = new YahooFinance();
 
